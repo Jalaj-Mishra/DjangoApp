@@ -23,9 +23,11 @@ def getAllEmp(request):
 
 def getEmpById(request, empId):
     emp = Employee.objects.get(id=empId)
-    return JsonResponse({"message": "fetching details for the particular employee"}, status=200)
+    return JsonResponse({"Emp fetched successfully": f'{emp.Name}'}, status=200)
     
-
+def getEmpByEmail(request, empEmail):
+    emp = Employee.objects.get(Email=empEmail)
+    return JsonResponse({"Emp fetched successfully": f'{emp.Name}'}, status=200)
 
 
 
@@ -35,14 +37,15 @@ def addEmp(request):
         return JsonResponse({"message": "Invalid Request"}, status=400)
     payload = json.loads(request.body)
 
-    name, desg = payload.values()
-    if (len(name) == 0 or len(desg) == 0):
+    name, desg, email = payload.values()
+    if (len(name) == 0 or len(desg) == 0 or email==""):
         return JsonResponse({"message": "Please fill all fields"}, status=400)
 
     newEmp = Employee.objects.create()
     newEmp.Name = name
     newEmp.Desg = desg
+    newEmp.Email = email
     newEmp.save()
-    return JsonResponse({"New Emp": "newEmp"}, status=200)
+    return JsonResponse({"New Emp": f'{name} and {email} added as an employee successfully.'}, status=200)
 
 

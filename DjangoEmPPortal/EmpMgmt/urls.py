@@ -6,4 +6,5 @@ urlpatterns = [
     path('add/', views.addEmp, name='addEmp'),
     path('empList/', views.getAllEmp, name='empList'),
     path('<int:empId>/', views.getEmpById, name='getEmpById'),
+    path('<str:empEmail>/', views.getEmpByEmail, name='getEmpByEmail'),
 ]

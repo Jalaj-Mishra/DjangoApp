@@ -4,3 +4,4 @@ from django.db import models
 class Employee(models.Model):
     Name = models.CharField(max_length=100)
     Desg = models.CharField(max_length=100)
+    Email = models.EmailField(unique=True, null=False)
