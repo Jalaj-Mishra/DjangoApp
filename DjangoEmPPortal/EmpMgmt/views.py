@@ -1,6 +1,7 @@
 from .models import Employee
 from .serializers import EmployeeSerializer
 from rest_framework import status, serializers
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -13,7 +14,11 @@ def home(request):
 @api_view(['GET'])
 def getAllEmp(request):
     empList = Employee.objects.all()
-    serializedEmpList = EmployeeSerializer(empList, many=True)  
+
+    paginator = PageNumberPagination()
+    paginated_empList = paginator.paginate_queryset(empList, request)
+
+    serializedEmpList = EmployeeSerializer(paginated_empList, many=True)  
     return Response(serializedEmpList.data)
 
 
