@@ -2,13 +2,37 @@ from .models import Employee
 from .serializers import EmployeeSerializer
 from rest_framework import status, serializers
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 
 
 @api_view(['GET'])
 def home(request):
-    return Response(data='Hello world!')
+    return Response(data="Hello World !")
+
+
+@api_view(['POST'])
+def login_view(request):
+    username = request.data.get("username")
+    password = request.data.get("password")
+
+    if not username or not password:
+        return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "message": "Login successful!",
+            "access_token": str(refresh.access_token),
+            "refresh_token": str(refresh)
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Invalid credentials!"}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 @api_view(['GET'])
@@ -32,6 +56,7 @@ def getEmpById(request):
     
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def addEmp(request):
     newEmployee = EmployeeSerializer(data=request.data)
     if Employee.objects.filter(**request.data).exists():
