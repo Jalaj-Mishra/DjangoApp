@@ -1,51 +1,68 @@
-from django.views.decorators.csrf import csrf_exempt
 from .models import Employee
-from django.http import JsonResponse
-from .models import Employee
-import json
+from .serializers import EmployeeSerializer
+from rest_framework import status, serializers
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 
-# Create your views here.
+@api_view(['GET'])
 def home(request):
-    return JsonResponse({"message": "Welcome Home !"}, status=200)
+    return Response(data='Hello world!')
 
 
-
-
+@api_view(['GET'])
 def getAllEmp(request):
-    emplist = Employee.objects.all()
-    if len(emplist) != 0:
-        return JsonResponse({"employees": list(emplist.values())}, status=200)
-    else:
-        return JsonResponse({"message": "No Employees found"}, status=200)
+    empList = Employee.objects.all()
+    serializedEmpList = EmployeeSerializer(empList, many=True)  
+    return Response(serializedEmpList.data)
 
- 
 
-def getEmpById(request, empId):
-    emp = Employee.objects.get(id=empId)
-    return JsonResponse({"Emp fetched successfully": f'{emp.Name}'}, status=200)
+@api_view(['GET'])
+def getEmpById(request):
+    if not (empId := request.query_params.get('id')):
+        return Response({"error": "Employee ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+    employee = Employee.objects.get(id=empId)  
+    serializedEmp = EmployeeSerializer(employee)  
+    return Response(serializedEmp.data)
     
-def getEmpByEmail(request, empEmail):
-    emp = Employee.objects.get(Email=empEmail)
-    return JsonResponse({"Emp fetched successfully": f'{emp.Name}'}, status=200)
 
-
-
-@csrf_exempt
+@api_view(['POST'])
 def addEmp(request):
-    if request.method != 'POST':
-        return JsonResponse({"message": "Invalid Request"}, status=400)
-    payload = json.loads(request.body)
+    newEmployee = EmployeeSerializer(data=request.data)
+    if Employee.objects.filter(**request.data).exists():
+        return serializers.ValidationError('This data is already exists !')
 
-    name, desg, email = payload.values()
-    if (len(name) == 0 or len(desg) == 0 or email==""):
-        return JsonResponse({"message": "Please fill all fields"}, status=400)
+    if not newEmployee.is_valid():
+        return Response(newEmployee.errors, status=status.HTTP_400_BAD_REQUEST)
+    newEmployee.save()
+    return Response(newEmployee.data)
 
-    newEmp = Employee.objects.create()
-    newEmp.Name = name
-    newEmp.Desg = desg
-    newEmp.Email = email
-    newEmp.save()
-    return JsonResponse({"New Emp": f'{name} and {email} added as an employee successfully.'}, status=200)
+
+@api_view(['PATCH'])
+def updateEmpById(request, id):
+    try:
+        employee = Employee.objects.get(id=id)  
+    except Employee.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = EmployeeSerializer(employee, data=request.data, partial=True)  # Allow partial update
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK) 
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['DELETE'])
+def deleteEmp(request, id):
+    try:
+        employee = Employee.objects.get(id=id)
+    except Employee.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+    employee.delete()
+    return Response({"message": f'{employee.Name} - Employee deleted successfully'}, status=status.HTTP_200_OK)
+
+
 
 
