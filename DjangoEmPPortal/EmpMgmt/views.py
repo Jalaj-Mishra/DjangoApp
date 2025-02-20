@@ -18,20 +18,20 @@ def home(request):
 def login_view(request):
     username = request.data.get("username")
     password = request.data.get("password")
+    print(username, password)
 
     if not username or not password:
         return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     user = authenticate(username=username, password=password)
-    if user is not None:
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            "message": "Login successful!",
-            "access_token": str(refresh.access_token),
-            "refresh_token": str(refresh)
-        }, status=status.HTTP_200_OK)
-    else:
+    if user is None:
         return Response({"error": "Invalid credentials!"}, status=status.HTTP_401_UNAUTHORIZED)
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        "message": "Login successful!",
+        "access_token": str(refresh.access_token),
+        "refresh_token": str(refresh)
+    }, status=status.HTTP_200_OK)
 
 
 
@@ -91,7 +91,7 @@ def deleteEmp(request, id):
     except Employee.DoesNotExist:
         return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
     employee.delete()
-    return Response({"message": f'{employee.Name} - Employee deleted successfully'}, status=status.HTTP_200_OK)
+    return Response({"message": f'{employee.username} - Employee deleted successfully'}, status=status.HTTP_200_OK)
 
 
 
